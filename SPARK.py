@@ -103,7 +103,9 @@ def generate_player_report(player_data, model, scaler):
 
     if all(col in player_data for col in ["OB%", "SLG%", "OPS"]):
         predicted_avg = predict_batting_avg(player_data, model, scaler)
-        report += f"🔹 **Predicted AVG (Next Phase):** {predicted_avg}\n"
+        report += f"🔹 **Predicted AVG (Next Phase):** {predicted_avg}\n\n"
+
+    # TODO add other code to add other predictions to the report here
 
     return report
 
@@ -140,6 +142,8 @@ def predict_batting_avg(player_data, model, scaler):
     except Exception as e:
         print(f"Prediction error: {e}")
         return "Prediction unavailable."
+
+# TODO add predict_"yourStatistic" here and get the code for it so that it can be called in generate_player_report
 
 @app.route('/get_players')
 def get_players():
