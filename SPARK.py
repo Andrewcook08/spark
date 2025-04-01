@@ -1,7 +1,7 @@
 import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 import numpy as np
@@ -140,6 +140,26 @@ def predict_batting_avg(player_data, model, scaler):
     except Exception as e:
         print(f"Prediction error: {e}")
         return "Prediction unavailable."
+
+@app.route('/get_players')
+def get_players():
+    """
+    Fetches the player names for a given team dynamically from Google Sheets.
+    """
+    team_name = request.args.get('team_name')
+    if not team_name:
+        return jsonify({"players": []})
+
+    sheet = get_google_sheet()
+    if not sheet:
+        return jsonify({"players": []})
+
+    team_data = get_team_data(sheet, team_name)
+    if team_data.empty or "Player" not in team_data.columns:
+        return jsonify({"players": []})  # Return an empty list if no players found
+
+    players = team_data["Player"].dropna().tolist()  # Convert player column to list
+    return jsonify({"players": players})
 
 # Flask route
 @app.route('/', methods=['GET', 'POST'])  # Allow both GET and POST
