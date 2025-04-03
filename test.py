@@ -271,7 +271,9 @@ target_column = "AVG"
 feature_columns = ["AB", "H", "RBI", "SLG%", "OB%"]  
 
 # Call the function with a DataFrame
-model, scaler = train_prediction_model(team_data, target_column, feature_columns)
+model_avg, scaler_avg = train_prediction_model(team_data, "AVG", feature_columns)
+model_era, scaler_era = train_prediction_model(team_data, "ERA", feature_columns)
+model_war, scaler_war = train_prediction_model(team_data, "WAR", feature_columns)
 
 # Function to predict a player's future AVG
 def predict_batting_avg(player_data, model, scaler):
