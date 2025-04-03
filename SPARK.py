@@ -96,7 +96,118 @@ def generate_player_report(player_data, model, scaler):
     Generates a detailed scouting report for a player based on their data and role.
     """
     report = f"📊 Player Scouting Report:\n\n"
-    report += f"🔹 **Player Name:** {player_data['Player']}\n"
+    player_name = player_data['Player']
+
+    # Check if the player has data for hitting, pitching, and fielding
+    is_hitter = 'AVG' in player_data and player_data['AVG'] not in [None, '']
+    is_pitcher = 'ERA' in player_data and player_data['ERA'] not in [None, '']
+    is_fielding = 'FLD%' in player_data and player_data['FLD%'] not in [None, '']
+
+    if is_hitter:
+        # Hitting Stats
+        avg = float(player_data['AVG']) if player_data['AVG'] not in [None, ''] else 0
+        obp = float(player_data['OB%']) if player_data['OB%'] not in [None, ''] else 0
+        slg = float(player_data['SLG%']) if player_data['SLG%'] not in [None, ''] else 0
+        ops = float(player_data['OPS']) if player_data['OPS'] not in [None, ''] else 0
+        strikeouts = int(player_data['SO']) if not pd.isna(player_data['SO']) else 0
+        walks = int(player_data['BB']) if not pd.isna(player_data['BB']) else 0
+        sb = player_data['SB-ATT'] if player_data['SB-ATT'] not in [None, ''] else '0-0'
+        hr = int(player_data['HR']) if not pd.isna(player_data['HR']) else 0
+        rbi = int(player_data['RBI']) if not pd.isna(player_data['RBI']) else 0
+        ab = int(player_data['AB']) if player_data['AB'] not in [None, ''] else 0
+
+        # Calculate advanced metrics
+        try:
+            k_bb_ratio = strikeouts / (walks if walks != 0 else 1)
+        except ZeroDivisionError:
+            k_bb_ratio = float('inf')
+
+        # Isolated Power (ISO) = SLG% - AVG
+        iso = slg - avg
+
+        # Runs Created (RC)
+        sb_total = sb.split('-')
+        sb_attempted = int(sb_total[1])
+        sb_successful = int(sb_total[0])
+        sb_percentage = sb_successful / sb_attempted if sb_attempted != 0 else 0
+        rc = (rbi + (0.2 * walks) + (0.9 * sb_successful) + (0.5 * hr))  # Simplified RC formula
+
+        # Report basic metrics
+        report += f"- Batting Average (AVG): {avg:.3f}\n"
+        report += f"- On-base Percentage (OB%): {obp:.3f}\n"
+        report += f"- Slugging Percentage (SLG%): {slg:.3f}\n"
+        report += f"- OPS: {ops:.3f}\n"
+        report += f"- Strikeouts: {strikeouts}\n"
+        report += f"- Walks: {walks}\n"
+        report += f"- Stolen Bases (SB-ATT): {sb}\n"
+        report += f"- Home Runs (HR): {hr}\n"
+        report += f"- Runs Batted In (RBI): {rbi}\n"
+
+        # Hitting performance analysis
+        if avg > 0.300 and ops > 0.900:
+            report += f"⚾ **Hitting Performance**: Elite hitter with excellent contact, power, and plate discipline. Can drive in runs and get on base consistently.\n"
+        elif avg > 0.280 and ops > 0.800:
+            report += f"⚾ **Hitting Performance**: Strong offensive contributor with solid hitting ability, power, and on-base skills.\n"
+        else:
+            report += f"⚾ **Hitting Performance**: Needs to improve consistency and discipline. Struggles with contact and plate approach.\n"
+
+        # Strikeout-to-Walk Ratio Analysis
+        if k_bb_ratio < 1:
+            report += f"⚾ **Plate Discipline**: Strong plate discipline with more walks than strikeouts. A disciplined hitter.\n"
+        else:
+            report += f"⚾ **Plate Discipline**: Needs improvement in plate discipline. More strikeouts than walks indicate a tendency to chase pitches.\n"
+
+        # Isolated Power (ISO) analysis
+        if iso > 0.200:
+            report += f"⚾ **Power**: Displays excellent power, regularly hitting for extra bases.\n"
+        elif iso > 0.150:
+            report += f"⚾ **Power**: Has good power potential but could benefit from more consistent hitting for extra bases.\n"
+        else:
+            report += f"⚾ **Power**: Needs to improve raw power and ability to drive the ball for extra bases.\n"
+
+        # Stolen Bases and Aggressiveness
+        if sb_percentage > 0.75:
+            report += f"⚾ **Base Running**: Excellent base-running ability with a high stolen base success rate.\n"
+        elif sb_percentage > 0.50:
+            report += f"⚾ **Base Running**: Aggressive base runner with a decent success rate.\n"
+        else:
+            report += f"⚾ **Base Running**: Needs to improve base-running decision-making and success rate.\n"
+
+        # Runs Created (RC) Analysis
+        if rc > 100:
+            report += f"⚾ **Offensive Impact**: Major contributor to the offense. Can create runs in a variety of ways.\n"
+        elif rc > 50:
+            report += f"⚾ **Offensive Impact**: Solid offensive contributor with a balanced approach.\n"
+        else:
+            report += f"⚾ **Offensive Impact**: Needs to improve overall offensive contribution and consistency.\n"
+
+    if is_pitcher:
+        # Pitching Stats
+        era = float(player_data['ERA']) if player_data['ERA'] not in [None, ''] else 0
+        report += f"- ERA: {era}\n"
+        report += f"- WHIP: {player_data['WHIP']}\n"
+        report += f"- Wins-Losses: {player_data['W-L']}\n"
+        report += f"- Appearances-Games Started: {player_data['APP-GS']}\n"
+        report += f"- Complete Games: {player_data['CG']}\n"
+        report += f"- Shutouts: {player_data['SHO']}\n"
+        report += f"- Saves: {player_data['SV']}\n"
+        report += f"- Innings Pitched: {player_data['IP']}\n"
+        report += f"- Strikeouts: {player_data['SO_Pitching']}\n"
+
+        # Pitching analysis
+        if era < 3.00:
+            report += f"🔥 **Pitching Performance**: Dominates hitters with a low ERA. Shows good control and ability to manage games.\n"
+        elif era < 4.00:
+            report += f"🔥 **Pitching Performance**: Solid pitcher, but could improve control and avoid hard contact.\n"
+        else:
+            report += f"🔥 **Pitching Performance**: Needs improvement in preventing earned runs. High ERA suggests issues with command and consistency.\n"
+
+        # WHIP analysis
+        if float(player_data['WHIP']) < 1.20:
+            report += f"⚾ **Pitching Control**: Excellent control with few base runners. Can dominate in high-leverage situations.\n"
+        else:
+            report += f"⚾ **Pitching Control**: Needs improvement in reducing walks and limiting base runners.\n"
+
 
     if "AVG" in player_data:
         report += f"🔹 **Current AVG:** {float(player_data['AVG']):.3f}\n"
@@ -142,6 +253,8 @@ def predict_batting_avg(player_data, model, scaler):
     except Exception as e:
         print(f"Prediction error: {e}")
         return "Prediction unavailable."
+    
+    
 
 # TODO add predict_"yourStatistic" here and get the code for it so that it can be called in generate_player_report
 
